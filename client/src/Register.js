@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const [formData, setFormData] = useState({ email: '', password: '', role: 'student' });
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const validate = () => {
     const emailRegex = /^it\d{8}@my\.sliit\.lk$/;
@@ -23,8 +24,10 @@ const Register = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validate()) {
-      console.log("Registering as:", formData.role);
-      // Integration point for Backend
+      // Logic for MongoDB goes here
+      console.log("Registered:", formData);
+      alert("Registration Successful!");
+      navigate('/login'); // Moves user to Login page
     }
   };
 
@@ -52,13 +55,12 @@ const Register = () => {
   );
 };
 
-// Styles shared between both components
 const styles = {
   container: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '85vh' },
   card: { background: 'var(--bg-surface)', padding: '40px', borderRadius: '16px', border: '1px solid var(--border)', width: '380px', textAlign: 'center' },
   title: { color: 'var(--primary)', marginBottom: '20px' },
   form: { display: 'flex', flexDirection: 'column', gap: '15px' },
-  input: { background: 'var(--bg-deep)', border: '1px solid var(--border)', padding: '12px', borderRadius: '8px', color: 'white' },
+  input: { background: 'var(--bg-deep)', border: '1px solid var(--border)', padding: '12px', borderRadius: '8px', color: 'white', outline: 'none' },
   toggleGroup: { display: 'flex', gap: '10px', marginBottom: '20px' },
   activeBtn: { flex: 1, padding: '10px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' },
   inactiveBtn: { flex: 1, padding: '10px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer' },
