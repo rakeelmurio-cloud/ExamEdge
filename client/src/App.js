@@ -38,22 +38,14 @@ const Navbar = () => (
 const Dashboard = () => (
   <div style={{ padding: '60px 20px', maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
     <div style={{ marginBottom: '40px' }}>
-      <span style={{ 
-        background: 'var(--primary-glow)',
-        color: 'var(--primary)', 
-        padding: '5px 15px', 
-        borderRadius: '20px', 
-        fontSize: '0.8rem', 
-        fontWeight: 'bold',
-        border: '1px solid var(--primary)'
-      }}>
-        V1.0 LIVE
-      </span>
+      
+        
+      
       <h1 style={{ fontSize: '3.5rem', marginTop: '20px', fontWeight: '800' }}>
         Empowering <span style={{ color: 'var(--primary)' }}>Peer Learning</span>
       </h1>
       <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto' }}>
-        The all-in-one student support platform for SLIIT developers. Collaborate, share notes, and ace your exams.
+        The all-in-one student support platform for SLIIT students
       </p>
     </div>
 
