@@ -1,0 +1,9 @@
+.nav-link {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.nav-link:hover {
+  color: var(--primary);
+  transform: translateY(-2px);
+}

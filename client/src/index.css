@@ -1,0 +1,26 @@
+:root {
+  /* Premium Palette */
+  --bg-deep: #0b0e14;        /* Darkest Navy */
+  --bg-surface: #151921;     /* Surface/Card Navy */
+  --primary: #6366f1;        /* Electric Indigo */
+  --primary-glow: rgba(99, 102, 241, 0.2);
+  --accent: #818cf8;         /* Light Indigo */
+  --text-main: #f1f5f9;      /* Pure White-ish */
+  --text-muted: #94a3b8;     /* Slate Blue/Grey */
+  --border: #1e293b;         /* Subtle Border */
+  --glass: rgba(21, 25, 33, 0.8);
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-deep);
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Custom Scrollbar for the Premium Look */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
