@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -7,19 +8,27 @@ const Login = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    const emailRegex = /^it\d{8}@my\.sliit\.lk$/;
-    
-    if (!emailRegex.test(email)) {
-      setError("Use your SLIIT student email.");
-      return;
+  const handleLogin = async (e) => {
+  e.preventDefault();
+  setError(""); // Clear previous errors
+
+  try {
+    const response = await axios.post('http://localhost:5000/api/users/login', {
+      email,
+      password
+    });
+
+    if (response.status === 200) {
+      console.log("Logged in successfully!");
+      // Optional: Save user data to localStorage so the app "remembers" who is logged in
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      navigate('/dashboard'); 
     }
-    
-    // Simulate successful login
-    console.log("Logged in!");
-    navigate('/dashboard'); // Moves user to Dashboard
-  };
+  } catch (err) {
+    // If the backend returns 401 (Unauthorized), this block runs
+    setError(err.response?.data?.error || "Invalid credentials. Try again.");
+  }
+};
 
   return (
     <div style={styles.container}>

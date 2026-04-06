@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Register = () => {
   const [formData, setFormData] = useState({ email: '', password: '', role: 'student' });
@@ -21,15 +22,19 @@ const Register = () => {
     return true;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validate()) {
-      // Logic for MongoDB goes here
-      console.log("Registered:", formData);
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (validate()) {
+    try {
+      // Replace with your actual backend URL (e.g., http://localhost:5000/api/auth/register)
+      await axios.post('http://localhost:5000/api/users/register', formData);
       alert("Registration Successful!");
-      navigate('/login'); // Moves user to Login page
+      navigate('/login');
+    } catch (err) {
+      setError("Registration failed. Is the server running?");
     }
-  };
+  }
+};
 
   return (
     <div style={styles.container}>

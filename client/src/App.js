@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import Register from './Register';
 import Login from './Login';
 import './index.css';
+import Forum from './Forum';
 
 // Navbar only shows on internal pages
 const Navbar = () => {
@@ -93,8 +94,9 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/forum" element={<div style={{padding: '50px'}}><h2>Discussion Forum</h2></div>} />
+        
         {/* Add other teammate routes here */}
+        <Route path="/forum" element={<Forum />} />
       </Routes>
     </Router>
   );
