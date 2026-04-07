@@ -14,6 +14,7 @@ const notesRoutes = require('./routes/notesRoutes');
 const quizRoutes = require('./routes/quizRoutes');
 const userRoutes = require('./routes/userRoutes');
 
+
 // Link the routes to the API
 app.use('/api/peer', peerRoutes);
 app.use('/api/forum', forumRoutes);
