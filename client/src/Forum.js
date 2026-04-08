@@ -1,286 +1,189 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const Forum = () => {
-  const moduleData = {
+const moduleData = {
     "Year 1": ["Introduction to Programming", "Mathematics for Computing", "Database Management"],
     "Year 2": ["Object Oriented Programming", "Software Engineering", "Computer Networks"],
     "Year 3": ["IT Project Management", "Cyber Security", "Data Science"],
     "Year 4": ["Distributed Systems", "Machine Learning", "Professional Practice"]
-  };
-
-  const [posts, setPosts] = useState([]);
-  const [filterYear, setFilterYear] = useState('All');
-  const [filterModule, setFilterModule] = useState('All');
-  const [replyText, setReplyText] = useState({}); 
-  const [newPost, setNewPost] = useState({ 
-    title: '', 
-    content: '', 
-    year: 'Year 1', 
-    module: moduleData["Year 1"][0] 
-  });
-
-  const loggedInUser = JSON.parse(localStorage.getItem('user'))?.email || "Guest Student";
-
-  const fetchPosts = async () => {
-    try {
-      const res = await axios.get('http://localhost:5000/api/forum/posts');
-      setPosts(res.data);
-    } catch (err) {
-      console.error("Fetch error:", err);
-    }
-  };
-
-  useEffect(() => { fetchPosts(); }, []);
-
-  const filteredPosts = posts.filter(post => {
-    const yearMatch = filterYear === 'All' || post.year === filterYear;
-    const moduleMatch = filterModule === 'All' || post.module === filterModule;
-    return yearMatch && moduleMatch;
-  });
-
-  const handleYearChange = (e) => {
-    const selectedYear = e.target.value;
-    setNewPost({ ...newPost, year: selectedYear, module: moduleData[selectedYear][0] });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await axios.post('http://localhost:5000/api/forum/create', { ...newPost, author: loggedInUser });
-      setPosts([res.data, ...posts]);
-      setNewPost({ ...newPost, title: '', content: '' });
-      alert("Question posted!");
-    } catch (err) { alert("Post failed."); }
-  };
-
-  const handleReply = async (postId) => {
-    if (!replyText[postId]) return;
-    try {
-      const res = await axios.post(`http://localhost:5000/api/forum/${postId}/reply`, {
-        text: replyText[postId],
-        user: loggedInUser
-      });
-      setPosts(posts.map(p => p._id === postId ? res.data : p));
-      setReplyText({ ...replyText, [postId]: '' }); 
-    } catch (err) { alert("Reply failed."); }
-  };
-
-  const handleDeletePost = async (postId) => {
-    if (window.confirm("Delete this question?")) {
-      try {
-        await axios.delete(`http://localhost:5000/api/forum/${postId}`);
-        setPosts(posts.filter(p => p._id !== postId));
-      } catch (err) { alert("Delete failed"); }
-    }
-  };
-
-  const handleEditReply = async (postId, index, currentText) => {
-    const newText = window.prompt("Edit your reply:", currentText);
-    if (newText && newText !== currentText) {
-      try {
-        const res = await axios.put(`http://localhost:5000/api/forum/${postId}/reply/${index}`, { text: newText });
-        setPosts(posts.map(p => p._id === postId ? res.data : p));
-      } catch (err) { alert("Edit failed"); }
-    }
-  };
-
-  return (
-    <div style={styles.pageWrapper}>
-      <div style={styles.container}>
-        <h1 style={styles.header}> <span style={styles.gradientText}>Forum</span></h1>
-        
-        {/* --- ASK A QUESTION --- */}
-        <form onSubmit={handleSubmit} style={styles.glassCard}>
-          <h3 style={{color: '#f8fafc', marginBottom: '15px', fontSize: '1.2rem'}}>Start a Discussion</h3>
-          <div style={styles.row}>
-            <select style={styles.select} value={newPost.year} onChange={handleYearChange}>
-              {Object.keys(moduleData).map(y => <option key={y} value={y} style={{color: 'black'}}>{y}</option>)}
-            </select>
-            <select style={styles.select} value={newPost.module} onChange={(e) => setNewPost({...newPost, module: e.target.value})}>
-              {moduleData[newPost.year].map(m => <option key={m} value={m} style={{color: 'black'}}>{m}</option>)}
-            </select>
-          </div>
-          <input style={styles.input} placeholder="Topic Title" value={newPost.title} onChange={(e) => setNewPost({...newPost, title: e.target.value})} required />
-          <textarea style={{...styles.input, height: '90px', resize: 'none'}} placeholder="Describe your doubt in detail..." value={newPost.content} onChange={(e) => setNewPost({...newPost, content: e.target.value})} required />
-          <button type="submit" style={styles.primaryBtn}>Post Question</button>
-        </form>
-
-        {/* --- FILTER BAR --- */}
-        <div style={styles.filterBar}>
-          <span style={{color: '#94a3b8', fontSize: '0.9rem'}}>Filter Feed:</span>
-          <select style={styles.miniSelect} onChange={(e) => {setFilterYear(e.target.value); setFilterModule('All');}}>
-            <option value="All">All Years</option>
-            {Object.keys(moduleData).map(y => <option key={y} value={y} style={{color: 'black'}}>{y}</option>)}
-          </select>
-          <select style={styles.miniSelect} value={filterModule} onChange={(e) => setFilterModule(e.target.value)}>
-            <option value="All">All Modules</option>
-            {filterYear !== 'All' && moduleData[filterYear].map(m => <option key={m} value={m} style={{color: 'black'}}>{m}</option>)}
-          </select>
-        </div>
-
-        {/* --- DISCUSSION FEED --- */}
-        <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
-          {filteredPosts.length > 0 ? filteredPosts.map(post => {
-            const isPostOwner = post.author === loggedInUser;
-            
-            return (
-              <div key={post._id} style={styles.postCard}>
-                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
-                  <div style={styles.postMeta}>{post.year} • {post.module} • By {post.author.split('@')[0]}</div>
-                  {isPostOwner && (
-                    <button onClick={() => handleDeletePost(post._id)} style={styles.deleteBtn}>Delete</button>
-                  )}
-                </div>
-                
-                <h3 style={{color: '#8b5cf6', margin: '12px 0', fontSize: '1.3rem'}}>{post.title}</h3>
-                <p style={{color: '#cbd5e1', marginBottom: '20px', fontSize: '1rem', lineHeight: '1.5'}}>{post.content}</p>
-
-                {/* Replies Section */}
-                <div style={styles.replySection}>
-                  {post.replies?.map((r, i) => (
-                    <div key={i} style={styles.replyItem}>
-                      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                        <span><strong style={{color: '#a78bfa'}}>{r.user.split('@')[0]}:</strong> <span style={{color: '#e2e8f0'}}>{r.text}</span></span>
-                        {r.user === loggedInUser && (
-                          <button onClick={() => handleEditReply(post._id, i, r.text)} style={styles.editBtn}>Edit</button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Interaction Area */}
-                {!isPostOwner ? (
-                  <div style={{display: 'flex', gap: '10px', marginTop: '15px'}}>
-                    <input 
-                      style={styles.replyInput} 
-                      placeholder="Suggest an answer..." 
-                      value={replyText[post._id] || ''}
-                      onChange={(e) => setReplyText({...replyText, [post._id]: e.target.value})}
-                    />
-                    <button style={styles.replyBtn} onClick={() => handleReply(post._id)}>Reply</button>
-                  </div>
-                ) : (
-                  <p style={{fontSize: '0.8rem', color: '#64748b', marginTop: '15px', fontStyle: 'italic', textAlign: 'center'}}>
-                    You are the author of this post.
-                  </p>
-                )}
-              </div>
-            );
-          }) : <p style={{textAlign: 'center', color: '#94a3b8', marginTop: '40px'}}>No questions found in this category.</p>}
-        </div>
-      </div>
-    </div>
-  );
 };
 
-const styles = {
-  pageWrapper: {
-    minHeight: '100vh',
-    background: 'radial-gradient(circle at top, #1e293b 0%, #0f172a 100%)',
-    paddingBottom: '60px'
-  },
-  container: { padding: '60px 20px', maxWidth: '850px', margin: '0 auto' },
-  header: { textAlign: 'center', fontSize: '3rem', marginBottom: '40px', color: 'white', fontWeight: '800', letterSpacing: '-1px' },
-  gradientText: {
-    background: 'linear-gradient(to right, #8b5cf6, #d946ef)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-  },
-  glassCard: { 
-    background: 'rgba(30, 41, 59, 0.5)', 
-    padding: '30px', 
-    borderRadius: '24px', 
-    border: '1px solid rgba(255, 255, 255, 0.1)', 
-    backdropFilter: 'blur(12px)',
-    display: 'flex', 
-    flexDirection: 'column', 
-    gap: '15px',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
-  },
-  row: { display: 'flex', gap: '15px' },
-  select: { 
-    flex: 1, 
-    background: 'rgba(15, 23, 42, 0.8)', // Matching your input field transparency
-    color: '#cbd5e1', 
-    border: '1px solid rgba(255, 255, 255, 0.1)', 
-    padding: '12px', 
-    borderRadius: '12px',
-    outline: 'none',
-    cursor: 'pointer',
-    appearance: 'none', // Removes default OS styling in some browsers
-    // This ensures that when the list opens, the options have the dark background
-    backgroundColor: '#1e293b', 
-  },
-  option: {
-    background: '#1e293b',
-    color: 'white'
-  },
-  input: { 
-    background: 'rgba(15, 23, 42, 0.6)', 
-    color: 'white', 
-    border: '1px solid rgba(255, 255, 255, 0.1)', 
-    padding: '14px', 
-    borderRadius: '12px', 
-    outline: 'none',
-    fontSize: '1rem'
-  },
-  primaryBtn: { 
-    background: '#8b5cf6', 
-    color: 'white', 
-    padding: '14px', 
-    border: 'none', 
-    borderRadius: '12px', 
-    fontWeight: '700', 
-    cursor: 'pointer',
-    transition: '0.3s ease',
-    boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)'
-  },
-  filterBar: { display: 'flex', gap: '15px', margin: '40px 0 25px', alignItems: 'center', justifyContent: 'center' },
-  miniSelect: {
-    background: 'rgba(30, 41, 59, 0.8)',
-    color: 'white',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    padding: '8px 12px',
-    borderRadius: '10px',
-    outline: 'none',
-    cursor: 'pointer'
-  },
-  postCard: { 
-    background: 'rgba(30, 41, 59, 0.4)', 
-    padding: '25px', 
-    borderRadius: '22px', 
-    border: '1px solid rgba(255, 255, 255, 0.05)',
-    transition: '0.3s ease',
-    backdropFilter: 'blur(8px)'
-  },
-  postMeta: { fontSize: '0.75rem', color: '#a78bfa', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  deleteBtn: { background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600', opacity: '0.8' },
-  editBtn: { background: 'none', border: 'none', color: '#8b5cf6', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600' },
-  replySection: { borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '15px', marginTop: '15px' },
-  replyItem: { background: 'rgba(15, 23, 42, 0.4)', padding: '10px 15px', borderRadius: '10px', fontSize: '0.9rem', marginBottom: '8px' },
-  replyInput: { 
-    flex: 1, 
-    background: 'rgba(15, 23, 42, 0.8)', 
-    color: 'white', 
-    border: '1px solid rgba(255, 255, 255, 0.1)', 
-    padding: '10px 15px', 
-    borderRadius: '10px', 
-    fontSize: '0.9rem', 
-    outline: 'none' 
-  },
-  replyBtn: { 
-    background: 'transparent', 
-    color: '#8b5cf6', 
-    border: '1px solid #8b5cf6', 
-    padding: '8px 20px', 
-    borderRadius: '10px', 
-    cursor: 'pointer', 
-    fontSize: '0.85rem', 
-    fontWeight: 'bold',
-    transition: '0.3s'
-  }
+const Forum = () => {
+    const [posts, setPosts] = useState([]);
+    const [filterYear, setFilterYear] = useState('All');
+    const [filterModule, setFilterModule] = useState('All');
+    const [replyText, setReplyText] = useState({}); 
+    const [newPost, setNewPost] = useState({ 
+        title: '', 
+        content: '', 
+        year: 'Year 1', 
+        module: moduleData["Year 1"][0] 
+    });
+
+    const loggedInUser = JSON.parse(localStorage.getItem('user'))?.email || "Guest Student";
+
+    const fetchPosts = async () => {
+        try {
+            const res = await axios.get('http://localhost:5000/api/forum/posts');
+            setPosts(res.data);
+        } catch (err) { console.error(err); }
+    };
+
+    useEffect(() => { fetchPosts(); }, []);
+
+    const filteredPosts = posts.filter(post => {
+        const yearMatch = filterYear === 'All' || post.year === filterYear;
+        const moduleMatch = filterModule === 'All' || post.module === filterModule;
+        return yearMatch && moduleMatch;
+    });
+
+    const handleYearChange = (e) => {
+        const selectedYear = e.target.value;
+        setNewPost({ ...newPost, year: selectedYear, module: moduleData[selectedYear][0] });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const res = await axios.post('http://localhost:5000/api/forum/create', { ...newPost, author: loggedInUser });
+            setPosts([res.data, ...posts]);
+            setNewPost({ ...newPost, title: '', content: '' });
+            alert("Topic created in the vault!");
+        } catch (err) { alert("Post failed."); }
+    };
+
+    const handleReply = async (postId) => {
+        if (!replyText[postId]) return;
+        try {
+            const res = await axios.post(`http://localhost:5000/api/forum/${postId}/reply`, {
+                text: replyText[postId],
+                user: loggedInUser
+            });
+            setPosts(posts.map(p => p._id === postId ? res.data : p));
+            setReplyText({ ...replyText, [postId]: '' }); 
+        } catch (err) { alert("Reply failed."); }
+    };
+
+    return (
+        <div style={S.page}>
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap');
+                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                .post-hover:hover { border-color: rgba(139, 92, 246, 0.3) !important; background: rgba(30, 41, 59, 0.5) !important; }
+                input:focus, textarea:focus, select:focus { border-color: #a78bfa !important; outline: none; background: rgba(15, 23, 42, 0.8) !important; }
+            `}</style>
+
+            <div style={S.container}>
+                <h1 style={S.h1}>Knowledge <span style={S.grad}>Forum.</span></h1>
+                
+                {/* --- ASK A QUESTION --- */}
+                <form onSubmit={handleSubmit} style={S.glassCard}>
+                    <h3 style={S.cardLabel}>Start a Discussion</h3>
+                    <div style={S.row}>
+                        <select style={S.select} value={newPost.year} onChange={handleYearChange}>
+                            {Object.keys(moduleData).map(y => <option key={y} value={y} style={S.opt}>{y}</option>)}
+                        </select>
+                        <select style={S.select} value={newPost.module} onChange={(e) => setNewPost({...newPost, module: e.target.value})}>
+                            {moduleData[newPost.year].map(m => <option key={m} value={m} style={S.opt}>{m}</option>)}
+                        </select>
+                    </div>
+                    <input style={S.input} placeholder="What is your question?" value={newPost.title} onChange={(e) => setNewPost({...newPost, title: e.target.value})} required />
+                    <textarea style={S.textarea} placeholder="Provide more context for your peers..." value={newPost.content} onChange={(e) => setNewPost({...newPost, content: e.target.value})} required />
+                    <button type="submit" style={S.primaryBtn}>Post to Community</button>
+                </form>
+
+                {/* --- FILTER BAR --- */}
+                <div style={S.filterBar}>
+                    <span style={S.filterLabel}>Feed Filter:</span>
+                    <select style={S.miniSelect} onChange={(e) => {setFilterYear(e.target.value); setFilterModule('All');}}>
+                        <option value="All">All Years</option>
+                        {Object.keys(moduleData).map(y => <option key={y} value={y} style={S.opt}>{y}</option>)}
+                    </select>
+                    <select style={S.miniSelect} value={filterModule} onChange={(e) => setFilterModule(e.target.value)}>
+                        <option value="All">All Modules</option>
+                        {filterYear !== 'All' && moduleData[filterYear].map(m => <option key={m} value={m} style={S.opt}>{m}</option>)}
+                    </select>
+                </div>
+
+                {/* --- DISCUSSION FEED --- */}
+                <div style={S.feed}>
+                    {filteredPosts.length > 0 ? filteredPosts.map(post => {
+                        const isOwner = post.author === loggedInUser;
+                        return (
+                            <div key={post._id} style={S.postCard} className="post-hover">
+                                <div style={S.postHeader}>
+                                    <div style={S.meta}>{post.year} • {post.module}</div>
+                                    <div style={S.authorTag}>By {post.author.split('@')[0]}</div>
+                                </div>
+                                
+                                <h3 style={S.postTitle}>{post.title}</h3>
+                                <p style={S.postContent}>{post.content}</p>
+
+                                <div style={S.replySection}>
+                                    {post.replies?.map((r, i) => (
+                                        <div key={i} style={S.replyItem}>
+                                            <strong style={S.replyUser}>{r.user.split('@')[0]}</strong>
+                                            <span style={S.replyText}>{r.text}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {!isOwner && (
+                                    <div style={S.interaction}>
+                                        <input 
+                                            style={S.replyInput} 
+                                            placeholder="Write a helpful response..." 
+                                            value={replyText[post._id] || ''}
+                                            onChange={(e) => setReplyText({...replyText, [post._id]: e.target.value})}
+                                        />
+                                        <button style={S.replyBtn} onClick={() => handleReply(post._id)}>Reply</button>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    }) : <p style={S.empty}>The forum is quiet. Be the first to ask a question!</p>}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const S = {
+    page: { minHeight: '100vh', background: 'radial-gradient(ellipse at 50% 0%, #161033 0%, #06060c 100%)', color: '#fff', fontFamily: "'Sora', sans-serif", padding: '80px 20px' },
+    container: { maxWidth: 850, margin: '0 auto' },
+    h1: { textAlign: 'center', fontSize: '3rem', fontWeight: 800, marginBottom: 50 },
+    grad: { background: 'linear-gradient(135deg, #a78bfa, #ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
+    
+    glassCard: { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '32px', padding: '35px', backdropFilter: 'blur(20px)', display: 'flex', flexDirection: 'column', gap: '20px', animation: 'fadeIn 0.6s ease' },
+    cardLabel: { fontSize: '1.1rem', fontWeight: 700, color: '#f8fafc' },
+    row: { display: 'flex', gap: '15px' },
+    select: { flex: 1, background: 'rgba(15,23,42,0.6)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.08)', padding: '14px', borderRadius: '16px', cursor: 'pointer' },
+    opt: { background: '#0f0a28', color: '#fff' },
+    input: { background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', padding: '16px', borderRadius: '16px', fontSize: '0.95rem' },
+    textarea: { background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', padding: '16px', borderRadius: '16px', fontSize: '0.95rem', height: 100, resize: 'none' },
+    primaryBtn: { background: 'linear-gradient(135deg, #7c3aed, #db2777)', color: '#fff', padding: '16px', border: 'none', borderRadius: '16px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 10px 20px -5px rgba(124, 58, 237, 0.4)' },
+
+    filterBar: { display: 'flex', gap: '15px', margin: '50px 0 30px', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.7s ease' },
+    filterLabel: { color: '#64748b', fontSize: '0.85rem', fontWeight: 600 },
+    miniSelect: { background: 'rgba(255,255,255,0.04)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', padding: '10px 18px', borderRadius: '14px', fontSize: '0.85rem', cursor: 'pointer' },
+
+    feed: { display: 'flex', flexDirection: 'column', gap: '25px' },
+    postCard: { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', padding: '30px', borderRadius: '28px', transition: '0.3s ease', animation: 'fadeIn 0.8s ease' },
+    postHeader: { display: 'flex', justifyContent: 'space-between', marginBottom: 15 },
+    meta: { fontSize: '0.7rem', color: '#a78bfa', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' },
+    authorTag: { fontSize: '0.75rem', color: '#64748b', fontWeight: 600 },
+    postTitle: { fontSize: '1.4rem', fontWeight: 700, color: '#fff', marginBottom: 12 },
+    postContent: { color: '#cbd5e1', fontSize: '1rem', lineHeight: 1.6, marginBottom: 25 },
+
+    replySection: { background: 'rgba(15, 23, 42, 0.3)', borderRadius: '18px', padding: '10px' },
+    replyItem: { padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.03)', display: 'flex', gap: '10px', alignItems: 'baseline' },
+    replyUser: { color: '#ec4899', fontSize: '0.85rem', minWidth: '70px' },
+    replyText: { color: '#e2e8f0', fontSize: '0.9rem' },
+
+    interaction: { display: 'flex', gap: '12px', marginTop: '20px' },
+    replyInput: { flex: 1, background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', padding: '12px 18px', borderRadius: '14px', fontSize: '0.9rem' },
+    replyBtn: { background: '#8b5cf6', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '14px', fontWeight: 700, cursor: 'pointer' },
+    empty: { textAlign: 'center', color: '#64748b', marginTop: 40 }
 };
 
 export default Forum;

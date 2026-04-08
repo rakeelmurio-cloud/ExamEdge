@@ -16,7 +16,6 @@ const NotesVault = () => {
     const [filterModule, setFilterModule] = useState('');
     const navigate = useNavigate();
 
-    // Get current logged-in user email
     const currentStudentEmail = localStorage.getItem('userEmail');
 
     useEffect(() => {
@@ -26,7 +25,6 @@ const NotesVault = () => {
     const fetchNotes = async () => {
         try {
             const res = await axios.get('http://localhost:5000/api/notes');
-            // Ensure every note has a likedBy array to prevent errors
             const sanitizedData = res.data.map(note => ({
                 ...note,
                 likedBy: note.likedBy || []
@@ -37,7 +35,6 @@ const NotesVault = () => {
         }
     };
 
-    // Recalculate filtered notes whenever filters OR the main list changes
     useEffect(() => {
         let temp = [...allNotes];
         if (filterYear) temp = temp.filter(n => n.year === filterYear);
@@ -50,14 +47,10 @@ const NotesVault = () => {
             alert("Please log in to like this note!");
             return;
         }
-
         try {
             const res = await axios.put(`http://localhost:5000/api/notes/${id}/like`, {
                 studentId: currentStudentEmail
             });
-
-            // Update state with the fresh note data returned from the server
-            // The server returns the updated note object with the new likedBy array
             setAllNotes(prev => prev.map(note => note._id === id ? { ...res.data, likedBy: res.data.likedBy || [] } : note));
         } catch (err) {
             console.error("Like failed:", err.response?.data?.message || err.message);
@@ -81,83 +74,97 @@ const NotesVault = () => {
     };
 
     return (
-        <div style={styles.container}>
-            <div style={styles.headerSection}>
-                <h1 style={styles.title}>Notes <span style={{ color: '#8b5cf6' }}>Vault</span></h1>
-                <div style={styles.filterGroup}>
-                    <select style={styles.select} value={filterYear} onChange={(e) => { setFilterYear(e.target.value); setFilterModule(''); }}>
-                        <option value="">All Years</option>
-                        {Object.keys(moduleData).map(y => <option key={y} value={y}>{y}</option>)}
-                    </select>
-                    <select style={styles.select} value={filterModule} onChange={(e) => setFilterModule(e.target.value)} disabled={!filterYear}>
-                        <option value="">All Modules</option>
-                        {filterYear && moduleData[filterYear].map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                    <button onClick={() => navigate('/upload-notes')} style={styles.uploadBtn}>+ Upload</button>
+        <div style={S.page}>
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800;900&display=swap');
+                @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+                .btn-hover:hover { opacity: 0.88; transform: translateY(-1px); }
+                .card-hover:hover { border-color: rgba(139,92,246,0.5) !important; transform: translateY(-3px); background: rgba(255,255,255,0.04) !important; }
+            `}</style>
+
+            <div style={S.center}>
+                <div style={{ animation: 'fadeUp 0.6s ease' }}>
+                    <h1 style={S.h1}>Notes <span style={S.grad}>Vault.</span></h1>
+                    <p style={S.sub}>Access, share, and study high-quality lecture notes curated by students.</p>
                 </div>
-            </div>
 
-            <div style={styles.grid}>
-                {filteredNotes.map(note => {
-                    // Logic: Count is the length of the likedBy array from the DB
-                    const noteLikes = note.likedBy || [];
-                    const totalLikes = noteLikes.length;
-                    const hasLiked = noteLikes.includes(currentStudentEmail);
+                <div style={S.filterCard}>
+                    <div style={S.filterGroup}>
+                        <select style={S.select} value={filterYear} onChange={(e) => { setFilterYear(e.target.value); setFilterModule(''); }}>
+                            <option value="">All Years</option>
+                            {Object.keys(moduleData).map(y => <option key={y} value={y} style={{background: '#0f0a28'}}>{y}</option>)}
+                        </select>
+                        <select style={S.select} value={filterModule} onChange={(e) => setFilterModule(e.target.value)} disabled={!filterYear}>
+                            <option value="">All Modules</option>
+                            {filterYear && moduleData[filterYear].map(m => <option key={m} value={m} style={{background: '#0f0a28'}}>{m}</option>)}
+                        </select>
+                        <button onClick={() => navigate('/upload-notes')} style={S.uploadBtn} className="btn-hover">
+                            <span>+</span> Upload Notes
+                        </button>
+                    </div>
+                </div>
 
-                    return (
-                        <div key={note._id} style={styles.card}>
-                            <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📄</div>
-                            <h3 style={styles.cardTitle}>{note.title}</h3>
-                            <p style={styles.cardSubText}>{note.year} • {note.module}</p>
+                <div style={S.grid}>
+                    {filteredNotes.map((note, index) => {
+                        const totalLikes = (note.likedBy || []).length;
+                        const hasLiked = (note.likedBy || []).includes(currentStudentEmail);
 
-                            <div style={styles.actionRow}>
-                                <button
-                                    onClick={() => handleLike(note._id)}
-                                    className="like-btn-pop"
-                                    style={{
-                                        ...styles.likeBtn,
-                                        background: hasLiked ? '#8b5cf6' : 'rgba(139, 92, 246, 0.1)',
-                                        color: hasLiked ? 'white' : '#8b5cf6',
-                                        // Student B can still click if Student A already liked it
-                                        cursor: hasLiked ? 'default' : 'pointer',
-                                        border: hasLiked ? '1px solid #8b5cf6' : '1px solid rgba(139, 92, 246, 0.5)'
-                                    }}
-                                >
-                                    <span style={{ marginRight: '5px' }}>❤️</span> {totalLikes}
-                                </button>
-                                <div style={styles.linkGroup}>
-                                    <a href={`http://localhost:5000/${note.fileUrl}`} target="_blank" rel="noreferrer" style={styles.subLink}>View</a>
-                                    <button onClick={() => downloadFile(`http://localhost:5000/${note.fileUrl}`, note.title)} style={styles.dlBtn}>Download</button>
+                        return (
+                            <div key={note._id} style={{ ...S.card, animation: `fadeUp ${0.4 + index * 0.1}s ease` }} className="card-hover">
+                                <div style={S.cardIcon}>📄</div>
+                                <h3 style={S.cardTitle}>{note.title}</h3>
+                                <div style={S.cardBadge}>{note.year}</div>
+                                <p style={S.cardSubText}>{note.module}</p>
+
+                                <div style={S.actionRow}>
+                                    <button onClick={() => handleLike(note._id)} style={{ ...S.likeBtn, color: hasLiked ? '#ec4899' : '#64748b' }} className="btn-hover">
+                                        <span style={{ fontSize: '1.2rem' }}>{hasLiked ? '❤️' : '🤍'}</span>
+                                        {totalLikes}
+                                    </button>
+                                    <button onClick={() => downloadFile(note.fileUrl, note.title)} style={S.downloadBtn} className="btn-hover">
+                                        Download PDF
+                                    </button>
                                 </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
+                
+                {filteredNotes.length === 0 && (
+                    <div style={{ marginTop: 60, color: '#475569', fontStyle: 'italic' }}>
+                        No notes found for the selected criteria.
+                    </div>
+                )}
             </div>
-            <style>{`
-                .like-btn-pop:active { transform: scale(1.2); transition: 0.1s; }
-                .like-btn-pop { transition: all 0.2s ease; }
-            `}</style>
         </div>
     );
 };
 
-const styles = {
-    container: { padding: '80px 20px', minHeight: '100vh', background: 'radial-gradient(circle at top, #1e293b 0%, #0f172a 100%)', color: 'white' },
-    headerSection: { display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '60px', gap: '25px' },
-    title: { fontSize: '3.5rem', fontWeight: '800', margin: 0 },
-    filterGroup: { display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' },
-    select: { padding: '12px', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.8)', color: 'white', border: '1px solid rgba(255, 255, 255, 0.1)', cursor: 'pointer' },
-    uploadBtn: { padding: '12px 25px', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' },
-    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '30px', maxWidth: '1200px', margin: '0 auto' },
-    card: { background: 'rgba(30, 41, 59, 0.5)', padding: '25px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', backdropFilter: 'blur(10px)' },
-    cardTitle: { fontSize: '1.2rem', marginBottom: '5px' },
-    cardSubText: { fontSize: '0.85rem', color: '#94a3b8', marginBottom: '20px' },
-    actionRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '15px' },
-    likeBtn: { padding: '6px 14px', borderRadius: '20px', fontWeight: 'bold', display: 'flex', alignItems: 'center', transition: 'all 0.2s ease' },
-    linkGroup: { display: 'flex', gap: '12px' },
-    subLink: { color: '#94a3b8', textDecoration: 'none', fontSize: '0.85rem' },
-    dlBtn: { background: 'none', border: 'none', color: '#8b5cf6', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer' }
+const S = {
+    page: { minHeight: '100vh', background: 'radial-gradient(ellipse at 20% 0%, #130d2e 0%, #060612 70%)', color: '#fff', padding: '60px 20px', fontFamily: "'Sora', sans-serif" },
+    center: { maxWidth: 1000, margin: '0 auto', textAlign: 'center' },
+    h1: { fontSize: 'clamp(2.5rem, 6vw, 3.5rem)', fontWeight: 900, marginBottom: 12, lineHeight: 1.1 },
+    grad: { background: 'linear-gradient(135deg,#a78bfa,#ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
+    sub: { color: '#64748b', maxWidth: 500, margin: '0 auto 40px', lineHeight: 1.7, fontSize: '1rem' },
+    
+    filterCard: { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 20, padding: '20px', marginBottom: 40, backdropFilter: 'blur(12px)' },
+    filterGroup: { display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' },
+    
+    select: { background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.1)', color: '#e2e8f0', borderRadius: 10, padding: '10px 16px', fontSize: '0.9rem', outline: 'none', cursor: 'pointer', minWidth: '180px' },
+    
+    uploadBtn: { background: 'linear-gradient(135deg,#7c3aed,#db2777)', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 10, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' },
+    
+    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', marginTop: '20px' },
+    
+    card: { background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, padding: '28px', textAlign: 'left', transition: 'all 0.3s ease', position: 'relative' },
+    cardIcon: { fontSize: '2.5rem', marginBottom: '16px' },
+    cardTitle: { fontSize: '1.2rem', fontWeight: 800, marginBottom: '8px', color: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    cardBadge: { display: 'inline-block', background: 'rgba(139,92,246,0.15)', color: '#a78bfa', padding: '4px 12px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' },
+    cardSubText: { color: '#64748b', fontSize: '0.85rem', marginBottom: '24px', lineHeight: '1.5', height: '40px', overflow: 'hidden' },
+    
+    actionRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' },
+    likeBtn: { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' },
+    downloadBtn: { flex: 1, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', padding: '10px', borderRadius: '10px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s' }
 };
 
 export default NotesVault;
