@@ -7,6 +7,8 @@ import './index.css';
 import PeerMatching from './PeerMatching';
 import RoleSelection from './RoleSelection';
 import TutorDashboard from './TutorDashboard';
+import NotesVault from './NotesVault';
+import UploadNotes from './UploadNotes';
 
 // Navbar Component: Synced with the login page aesthetic
 const Navbar = () => {
@@ -21,7 +23,7 @@ const Navbar = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           
           <span style={{ letterSpacing: '-0.5px' }}>
-            Exam<span style={{ color: 'var(--primary, #8b5cf6)' }}>Edge</span>
+            Exam<span style={{ color: '#8b5cf6' }}>Edge</span>
           </span>
         </div>
       </Link>
@@ -109,6 +111,8 @@ function App() {
         <Route path="/peer" element={<PeerMatching />} />
         <Route path="/select-role" element={<RoleSelection />} />
         <Route path="/tutor-dashboard" element={<TutorDashboard />} />
+        <Route path="/notes" element={<NotesVault />} />
+        <Route path="/upload-notes" element={<UploadNotes />} />
       </Routes>
     </Router>
   );

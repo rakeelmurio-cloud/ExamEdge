@@ -98,14 +98,23 @@ const Register = () => {
 
   const validate = () => {
     const emailRegex = /^it\d{8}@my\.sliit\.lk$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{6,}$/;
+
     if (!emailRegex.test(formData.email)) {
       setError("Use your itxxxxxxxx@my.sliit.lk email.");
       return false;
     }
+
+    if (!passwordRegex.test(formData.password)) {
+      setError("Password must be at least 6 characters and include uppercase, lowercase, and a special character.");
+      return false;
+    }
+
     if (formData.role === 'tutor' && !idVerified) {
       setError("Student ID verification required for Tutors.");
       return false;
     }
+
     return true;
   };
 
@@ -152,14 +161,18 @@ const Register = () => {
               type="password"
               placeholder="Password"
               style={styles.input}
+              value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
           </div>
 
+          <p style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'left' }}>
+            Must be 6+ chars with uppercase, lowercase & special character
+          </p>
+
           {formData.role === 'tutor' && (
             <>
-              {/* ID UPLOAD SECTION WITH INSTRUCTIONS */}
               <div style={{...styles.uploadArea, borderColor: idVerified ? '#22c55e' : fileName ? '#6366f1' : '#cbd5e1'}}>
                 <label style={styles.uploadLabel}>
                   <span style={{fontSize: '20px', marginBottom: '5px'}}>🪪</span>
@@ -231,14 +244,11 @@ const styles = {
   icon: { marginRight: '10px', color: '#64748b' },
   input: { border: 'none', outline: 'none', background: 'transparent', width: '100%', color: '#0f172a', fontSize: '14px' },
   select: { border: 'none', outline: 'none', background: 'none', width: '100%', color: '#0f172a', fontSize: '14px' },
-  
-  // New Upload Area Styles
   uploadArea: { border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '15px', background: 'rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'all 0.3s' },
   uploadLabel: { display: 'flex', flexDirection: 'column', color: '#cbd5e1', fontSize: '13px', cursor: 'pointer' },
   uploadHint: { fontSize: '11px', color: '#94a3b8', marginTop: '3px' },
   hiddenInput: { display: 'none' },
   fileName: { fontSize: '11px', color: '#818cf8', marginTop: '8px', fontWeight: '600' },
-
   button: { marginTop: '10px', padding: '14px', borderRadius: '12px', border: 'none', background: 'linear-gradient(45deg, #6366f1, #8b5cf6)', color: '#fff', fontWeight: '700', cursor: 'pointer' },
   divider: { height: '1px', background: 'rgba(255,255,255,0.1)', margin: '15px 0' },
   error: { color: '#fb7185', fontSize: '12px', fontWeight: '500', textAlign: 'left' },
