@@ -8,31 +8,28 @@ const Login = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError("");
+  // Inside your Login.js handleLogin function
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setError("");
+  try {
+    const res = await axios.post('http://localhost:5000/api/users/login', {
+      email,
+      password
+    });
 
-    try {
-      const res = await axios.post('http://localhost:5000/api/users/login', {
-        email,
-        password
-      });
+    // SAVE BOTH: The user object and the specific email string
+    localStorage.setItem('user', JSON.stringify(res.data.user));
+    localStorage.setItem('userEmail', res.data.user.email); 
 
-      // Save the user object (includes email and role)
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-
-      // Check the role from the backend response
-      if (res.data.user.role === 'tutor') {
-        // If they are a tutor, let them choose their mode
-        navigate('/select-role');
-      } else {
-        // If they are just a student, go straight to the dashboard
-        navigate('/dashboard');
-      }
-      
-    } catch (err) {
-      setError(err.response?.data?.error || "Invalid credentials");
+    if (res.data.user.role === 'tutor') {
+      navigate('/select-role');
+    } else {
+      navigate('/dashboard');
     }
+  } catch (err) {
+    setError(err.response?.data?.error || "Invalid credentials");
+  }
 };
 
   return (
